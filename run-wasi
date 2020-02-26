@@ -1,0 +1,26 @@
+#!/usr/bin/env node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint
+
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const { WASI } = require('wasi');
+
+const wasi = new WASI({
+  args: process.argv.slice(2),
+  env: process.env,
+  preopens: {
+    '.': process.cwd(),
+  }
+});
+
+const importObject = { wasi_snapshot_preview1: wasi.wasiImport };
+
+if (process.argv.length > 2) {
+  const buf = fs.readFileSync(process.argv[2]);
+
+  WebAssembly.instantiate(buf, importObject).then(
+    ({instance}) => wasi.start(instance)
+  );
+} else {
+  console.log(`Usage: ${path.basename(process.argv[1])} <wasm binary>`);
+}
